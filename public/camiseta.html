@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div class="camiseta-container">
+<svg id="camiseta-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="500" height="500" viewBox="0 0 599 404">
+<desc>Created with SVGMaker Editor 3.0.0</desc>
+<defs>
+</defs>
+<path id="manga-derecha" class="parte-camiseta" transform="translate(0,0)" style="stroke: rgb(0,0,0)"; stroke-width: 2; vector-effect="non-scaling-stroke" stroke-linecap="round" d="M381.3806 101.8247L382.6917 157.5339 438.631 185.3885 460.9194 138.9641Z"/>
+<path id="manga-izquierda" class="parte-camiseta" transform="translate(0,0)" style="stroke: rgb(0,0,0)"; stroke-width: 2; vector-effect="non-scaling-stroke" stroke-linecap="round" d="M205.4649 98.2547L204.1872 161.7314 149.6739 193.4697 127.9538 140.5725Z"/>
+<path id="torso" class="parte-camiseta" transform="translate(0,0)" style="stroke: rgb(0,0,0)"; stroke-width: 2; vector-effect="non-scaling-stroke" stroke-linecap="round" d="M209.2333 99.1304L208.7106 195.4556 191.9847 346.3425 387.4692 346.3425 378.5835 194.782 377.0155 101.1512 327.3603 99.804 315.8612 141.5674 267.7741 139.5466 262.0246 98.4568Z"/>
+<path id="cuello" class="parte-camiseta" transform="translate(0,0)" style="stroke: rgb(0,0,0)"; stroke-width: 2; vector-effect="non-scaling-stroke" stroke-linecap="round" d="M270.1697 93.068L275.5617 133.4841 309.2621 135.505 320.0462 95.0888 294.4339 120.0121Z"/>
+</svg>
+    </div>
+    <!-- Selector de color y botones -->
+<div>
+  <input type="color" id="color-picker" value="#ffffff" />
+  <button id="btn-guardar">Guardar Diseño</button>
+  <button id="btn-limpiar">Reiniciar Colores</button>
+</div>
+<script>
+    // Referencias a elementos del DOM
+const svg = document.getElementById('camiseta-svg');
+const colorPicker = document.getElementById('color-picker');
+const btnGuardar = document.getElementById('btn-guardar');
+const btnLimpiar = document.getElementById('btn-limpiar');
+
+let parteSeleccionada = null; // elemento SVG actualmente seleccionado por el usuario
+
+// Event listener para seleccionar parte de la camiseta al hacer click
+svg.addEventListener('click', (event) => {
+  if (event.target.classList.contains('parte-camiseta')) {
+    parteSeleccionada = event.target;  // establece la parte clickeada como seleccionada
+    // Opcional: resaltar de alguna forma la parte seleccionada, o mostrar su nombre
+    console.log('Parte seleccionada:', parteSeleccionada.id);
+    // Actualizar el colorPicker al color actual de la parte
+    const colorActual = parteSeleccionada.getAttribute('fill');
+    colorPicker.value = colorActual;
+  }
+});
+
+// Event listener para cambiar color de la parte seleccionada
+colorPicker.addEventListener('input', (event) => {
+  if (parteSeleccionada) {
+    parteSeleccionada.setAttribute('fill', event.target.value);
+  }
+});
+
+// Botón para reiniciar todos los colores a blanco
+btnLimpiar.addEventListener('click', () => {
+  document.querySelectorAll('.parte-camiseta').forEach(el => {
+    el.setAttribute('fill', '#ffffff');
+  });
+});
+btnGuardar.addEventListener('click', async () => {
+  // Obtener colores actuales de cada parte
+  const diseño = {
+    torsoColor: document.getElementById('torso').getAttribute('fill'),
+    mangaIzqColor: document.getElementById('manga-izquierda').getAttribute('fill'),
+    mangaDerColor: document.getElementById('manga-derecha').getAttribute('fill'),
+    cuelloColor: document.getElementById('cuello').getAttribute('fill')
+  };
+  
+  // Enviar via fetch al servidor
+  const resp = await fetch('/api/camisetas', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(diseño)
+  });
+  const data = await resp.json();
+  console.log('Diseño guardado en servidor:', data);
+});
+
+</script>
+</body>
+</html>
