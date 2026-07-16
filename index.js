@@ -242,6 +242,201 @@ app.delete('/api/usuarios/:id', async (req, res) => {
     res.status(500).json({ error: 'Error del servidor' });
   }
 });
+// =====================================================
+// CRUD DE CAMISETAS
+// Todas las rutas requieren un token válido
+// =====================================================
+ 
+// Obtener las camisetas del usuario autenticado
+app.get('/api/camisetas', verificarToken, async (req, res) => {
+  try {
+    const camisetas = await Camiseta.find({
+      
+    }).sort({ fechaCreacion: -1 });
+ 
+    res.json(camisetas);
+ 
+  } catch (error) {
+    console.error('Error al obtener camisetas:', error);
+ 
+    res.status(500).json({
+      error: 'Error al obtener las camisetas'
+    });
+  }
+});
+ 
+ 
+// Obtener una camiseta específica del usuario
+app.get('/api/camisetas/:id', verificarToken, async (req, res) => {
+  try {
+    const camiseta = await Camiseta.findOne({
+      _id: req.params.id
+    });
+ 
+    if (!camiseta) {
+      return res.status(404).json({
+        error: 'Camiseta no encontrada'
+      });
+    }
+ 
+    res.json(camiseta);
+ 
+  } catch (error) {
+    console.error('Error al obtener camiseta:', error);
+ 
+    res.status(400).json({
+      error: 'Identificador de camiseta inválido'
+    });
+  }
+});
+ 
+ 
+// Crear una nueva camiseta
+app.post('/api/camisetas', verificarToken, async (req, res) => {
+  try {
+    const {
+      torsoColor,
+      mangaIzqColor,
+      mangaDerColor,
+      cuelloColor
+    } = req.body;
+ 
+    const nuevaCamiseta = new Camiseta({
+      creador: req.usuarioId,
+      torsoColor,
+      mangaIzqColor,
+      mangaDerColor,
+      cuelloColor
+    });
+ 
+    const camisetaGuardada = await nuevaCamiseta.save();
+ 
+    res.status(201).json(camisetaGuardada);
+ 
+  } catch (error) {
+    console.error('Error al crear camiseta:', error);
+ 
+    res.status(400).json({
+      error: 'Error al crear la camiseta'
+    });
+  }
+});
+ 
+ 
+// Actualizar una camiseta del usuario autenticado
+app.put('/api/camisetas/:id', verificarToken, async (req, res) => {
+  try {
+    const {
+      torsoColor,
+      mangaIzqColor,
+      mangaDerColor,
+      cuelloColor
+    } = req.body;
+ 
+    const camisetaActualizada = await Camiseta.findOneAndUpdate(
+      {
+        _id: req.params.id
+      },
+      {
+        torsoColor,
+        mangaIzqColor,
+        mangaDerColor,
+        cuelloColor
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+ 
+    if (!camisetaActualizada) {
+      return res.status(404).json({
+        error: 'Camiseta no encontrada'
+      });
+    }
+ 
+    res.json(camisetaActualizada);
+ 
+  } catch (error) {
+    console.error('Error al actualizar camiseta:', error);
+ 
+    res.status(400).json({
+      error: 'Error al actualizar la camiseta'
+    });
+  }
+});
+ 
+ 
+// Eliminar una camiseta del usuario autenticado
+app.delete('/api/camisetas/:id', verificarToken, async (req, res) => {
+  try {
+    const camisetaEliminada = await Camiseta.findOneAndDelete({
+      _id: req.params.id
+    });
+ 
+    if (!camisetaEliminada) {
+      return res.status(404).json({
+        error: 'Camiseta no encontrada'
+      });
+    }
+ 
+    res.json({
+      mensaje: 'Camiseta eliminada correctamente'
+    });
+ 
+  } catch (error) {
+    console.error('Error al eliminar camiseta:', error);
+ 
+    res.status(400).json({
+      error: 'Error al eliminar la camiseta'
+    });
+  }
+});
+// Votar por una camiseta
+app.put('/api/camisetas/:id/votar', verificarToken, async (req, res) => {
+  try {
+    const { voto } = req.body;
+ 
+    // Solo se permite votar +1 o -1
+    if (voto !== 1 && voto !== -1) {
+      return res.status(400).json({
+        error: 'El voto debe ser 1 o -1'
+      });
+    }
+ 
+    const camisetaActualizada = await Camiseta.findByIdAndUpdate(
+      req.params.id,
+      {
+        $inc: {
+          calificacion: voto
+        }
+      },
+      {
+        new: true
+      }
+    );
+ 
+    if (!camisetaActualizada) {
+      return res.status(404).json({
+        error: 'Camiseta no encontrada'
+      });
+    }
+ 
+    res.json({
+      mensaje: 'Voto registrado',
+      calificacion: camisetaActualizada.calificacion,
+      camiseta: camisetaActualizada
+    });
+ 
+  } catch (error) {
+    console.error('Error al votar:', error);
+ 
+    res.status(500).json({
+      error: 'Error al registrar el voto'
+    });
+  }
+});
+
 app.get('/api/usuario-logueado', verificarToken, async (req, res) => {
 
   try {
@@ -281,6 +476,9 @@ app.get('/api/usuario-logueado', verificarToken, async (req, res) => {
   }
 
 });
+
+
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor API escuchando en http://localhost:${PORT}`);
