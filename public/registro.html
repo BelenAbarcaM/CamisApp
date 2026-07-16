@@ -1,0 +1,81 @@
+<html>
+
+ 
+
+<head></head>
+
+<body>
+
+ 
+
+ 
+
+<h2>Escriba su nombre</h2>
+
+<input id = "nombre" type="text" placeholder="Escriba su nombre">
+
+ 
+
+<h2>Escriba su email</h2>
+
+<input id = "email" type="text" placeholder="Escriba su email">
+
+<h2>Escriba la clave</h2>
+
+<input id = "clave" type="password" placeholder="Escriba su clave">
+
+ 
+
+<input type="button" value="Registrarse" id = "btn-guardar">
+
+ 
+
+<script>
+
+ 
+
+const btnGuardar = document.getElementById('btn-guardar');
+
+btnGuardar.addEventListener('click', async () => {
+
+  // Obtener colores actuales de cada parte
+
+  const usuario = {
+
+    nombre: document.getElementById('nombre').value,
+
+    email: document.getElementById('email').value,
+
+    clave: document.getElementById('clave').value,
+
+  
+
+  };
+
+  // Enviar via fetch al servidor
+
+  const resp = await fetch('/api/registro', {
+
+    method: 'POST',
+
+    headers: {
+
+      'Content-Type': 'application/json'
+
+    },
+
+    body: JSON.stringify(usuario)
+
+  });
+
+  const data = await resp.json();
+
+  console.log('Usuario guardado en servidor:', data);
+
+});
+
+</script>
+
+</body>
+
+</html>
