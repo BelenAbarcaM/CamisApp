@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="es">
+ 
+<head>
+  <meta charset="UTF-8">
+ 
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+ 
+  <title>Carrusel de camisetas</title>
+ 
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+ 
+    body {
+      margin: 0;
+      padding: 30px 15px;
+      font-family: Arial, sans-serif;
+      background-color: #f1f3f5;
+    }
+ 
+    h1 {
+      text-align: center;
+      color: #222;
+    }
+ 
+    .carrusel-contenedor {
+      position: relative;
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 0 55px;
+    }
+ 
+    .carrusel-ventana {
+      overflow: hidden;
+    }
+ 
+    .carrusel {
+      display: flex;
+      gap: 20px;
+      transition: transform 0.4s ease;
+    }
+ 
+    .tarjeta-camiseta {
+      flex: 0 0 calc((100% - 40px) / 3);
+      min-width: 0;
+      padding: 20px;
+      text-align: center;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+    }
+ 
+    .camiseta-svg {
+      width: 100%;
+      max-width: 280px;
+      height: 300px;
+    }
+ 
+    .titulo-camiseta {
+      margin: 10px 0;
+      font-size: 18px;
+    }
+ 
+    .calificacion {
+      margin: 12px 0;
+      font-size: 22px;
+      font-weight: bold;
+    }
+ 
+    .calificacion-positiva {
+      color: #198754;
+    }
+ 
+    .calificacion-negativa {
+      color: #dc3545;
+    }
+ 
+    .calificacion-neutral {
+      color: #555;
+    }
+ 
+    .botones-voto {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+ 
+    .botones-voto button {
+      min-width: 90px;
+      padding: 10px 14px;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+    }
+ 
+    .btn-favor {
+      background-color: #198754;
+    }
+ 
+    .btn-contra {
+      background-color: #dc3545;
+    }
+ 
+    .botones-voto button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+ 
+    .boton-carrusel {
+      position: absolute;
+      top: 50%;
+      z-index: 5;
+      width: 45px;
+      height: 45px;
+      color: white;
+      background-color: #222;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 24px;
+      transform: translateY(-50%);
+    }
+ 
+    .boton-anterior {
+      left: 0;
+    }
+ 
+    .boton-siguiente {
+      right: 0;
+    }
+ 
+    .boton-carrusel:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+ 
+    #mensaje {
+      min-height: 24px;
+      margin-top: 20px;
+      text-align: center;
+      font-weight: bold;
+    }
+ 
+    .mensaje-correcto {
+      color: #198754;
+    }
+ 
+    .mensaje-error {
+      color: #dc3545;
+    }
+ 
+    .sin-camisetas {
+      padding: 40px;
+      text-align: center;
+      font-size: 20px;
+      color: #666;
+      background-color: white;
+      border-radius: 10px;
+    }
+ 
+    @media (max-width: 850px) {
+      .tarjeta-camiseta {
+        flex-basis: calc((100% - 20px) / 2);
+      }
+    }
+ 
+    @media (max-width: 600px) {
+      .carrusel-contenedor {
+        padding: 0 45px;
+      }
+ 
+      .tarjeta-camiseta {
+        flex-basis: 100%;
+      }
+    }
+  </style>
+</head>
+ 
+<body>
+ 
+  <h1>Diseños de camisetas</h1>
+ 
+  <div class="carrusel-contenedor">
+ 
+    <button
+      type="button"
+      id="btn-anterior"
+      class="boton-carrusel boton-anterior">
+      &#10094;
+    </button>
+ 
+    <div class="carrusel-ventana">
+      <div id="carrusel" class="carrusel"></div>
+    </div>
+ 
+    <button
+      type="button"
+      id="btn-siguiente"
+      class="boton-carrusel boton-siguiente">
+      &#10095;
+    </button>
+ 
+  </div>
+ 
+  <div id="mensaje"></div>
+ 
+  <script>
+    const API_CAMISETAS = '/api/camisetas';
+ 
+    const carrusel = document.getElementById('carrusel');
+    const btnAnterior = document.getElementById('btn-anterior');
+    const btnSiguiente = document.getElementById('btn-siguiente');
+    const mensaje = document.getElementById('mensaje');
+ 
+    let camisetas = [];
+    let posicionActual = 0;
+ 
+ 
+    document.addEventListener('DOMContentLoaded', iniciarPagina);
+ 
+ 
+    async function iniciarPagina() {
+      const sesionValida = await verificarSesion();
+ 
+      if (!sesionValida) {
+        return;
+      }
+ 
+      btnAnterior.addEventListener('click', mostrarAnterior);
+      btnSiguiente.addEventListener('click', mostrarSiguiente);
+ 
+      window.addEventListener('resize', () => {
+        posicionActual = 0;
+        actualizarCarrusel();
+      });
+ 
+      await cargarCamisetas();
+    }
+ 
+ 
+    function obtenerToken() {
+      return localStorage.getItem('token');
+    }
+ 
+ 
+    function obtenerHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + obtenerToken()
+      };
+    }
+ 
+ 
+    async function verificarSesion() {
+      const token = obtenerToken();
+ 
+      if (!token) {
+        regresarAlLogin();
+        return false;
+      }
+ 
+      try {
+        const respuesta = await fetch('/api/verificatoken', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        });
+ 
+        if (!respuesta.ok) {
+          regresarAlLogin();
+          return false;
+        }
+ 
+        return true;
+ 
+      } catch (error) {
+        console.error('Error verificando la sesión:', error);
+        regresarAlLogin();
+        return false;
+      }
+    }
+ 
+ 
+    function regresarAlLogin() {
+      localStorage.removeItem('token');
+      window.location.replace('login.html');
+    }
+ 
+ 
+    async function cargarCamisetas() {
+      try {
+        const respuesta = await fetch(API_CAMISETAS, {
+          method: 'GET',
+          headers: obtenerHeaders()
+        });
+ 
+        const datos = await procesarRespuesta(respuesta);
+ 
+        camisetas = datos;
+        posicionActual = 0;
+ 
+        mostrarCamisetas();
+ 
+      } catch (error) {
+        console.error(error);
+        mostrarMensaje(error.message, true);
+      }
+    }
+ 
+ 
+    async function procesarRespuesta(respuesta) {
+      if (respuesta.status === 401 || respuesta.status === 403) {
+        regresarAlLogin();
+        throw new Error('La sesión expiró');
+      }
+ 
+      let datos = {};
+ 
+      try {
+        datos = await respuesta.json();
+      } catch (error) {
+        datos = {};
+      }
+ 
+      if (!respuesta.ok) {
+        throw new Error(
+          datos.error || 'No fue posible completar la operación'
+        );
+      }
+ 
+      return datos;
+    }
+ 
+ 
+    function mostrarCamisetas() {
+      carrusel.replaceChildren();
+ 
+      if (camisetas.length === 0) {
+        const aviso = document.createElement('div');
+ 
+        aviso.className = 'sin-camisetas';
+        aviso.textContent = 'No hay camisetas guardadas.';
+ 
+        carrusel.appendChild(aviso);
+ 
+        btnAnterior.disabled = true;
+        btnSiguiente.disabled = true;
+ 
+        return;
+      }
+ 
+      camisetas.forEach((camiseta, indice) => {
+        const tarjeta = crearTarjetaCamiseta(camiseta, indice);
+        carrusel.appendChild(tarjeta);
+      });
+ 
+      actualizarCarrusel();
+    }
+ 
+ 
+    function crearTarjetaCamiseta(camiseta, indice) {
+      const tarjeta = document.createElement('article');
+      tarjeta.className = 'tarjeta-camiseta';
+ 
+      const titulo = document.createElement('h2');
+      titulo.className = 'titulo-camiseta';
+      titulo.textContent = 'Diseño ' + (indice + 1);
+ 
+      const svg = crearCamisetaSvg(camiseta);
+ 
+      const calificacion = document.createElement('div');
+      calificacion.id = 'calificacion-' + camiseta._id;
+      calificacion.className = obtenerClaseCalificacion(
+        camiseta.calificacion
+      );
+ 
+      calificacion.textContent =
+        'Calificación: ' + (camiseta.calificacion || 0);
+ 
+      const botones = document.createElement('div');
+      botones.className = 'botones-voto';
+ 
+      const btnFavor = document.createElement('button');
+      btnFavor.type = 'button';
+      btnFavor.className = 'btn-favor';
+      btnFavor.textContent = '👍 A favor';
+ 
+      btnFavor.addEventListener('click', () => {
+        votarCamiseta(camiseta._id, 1, btnFavor, btnContra);
+      });
+ 
+      const btnContra = document.createElement('button');
+      btnContra.type = 'button';
+      btnContra.className = 'btn-contra';
+      btnContra.textContent = '👎 En contra';
+ 
+      btnContra.addEventListener('click', () => {
+        votarCamiseta(camiseta._id, -1, btnFavor, btnContra);
+      });
+ 
+      botones.appendChild(btnFavor);
+      botones.appendChild(btnContra);
+ 
+      tarjeta.appendChild(titulo);
+      tarjeta.appendChild(svg);
+      tarjeta.appendChild(calificacion);
+      tarjeta.appendChild(botones);
+ 
+      return tarjeta;
+    }
+ 
+ 
+    function crearCamisetaSvg(camiseta) {
+      const namespaceSvg = 'http://www.w3.org/2000/svg';
+ 
+      const svg = document.createElementNS(namespaceSvg, 'svg');
+ 
+      svg.setAttribute('class', 'camiseta-svg');
+      svg.setAttribute('viewBox', '0 0 1100 1024');
+      svg.setAttribute('xmlns', namespaceSvg);
+ 
+      const mangaIzquierda = crearParteSvg(
+        namespaceSvg,
+        camiseta.mangaIzqColor,
+        'M179.7272 288.2346L189.0279 457.1962 370.3902 384.3412 368.8401 232.4308Z'
+      );
+ 
+      const torso = crearParteSvg(
+        namespaceSvg,
+        camiseta.torsoColor,
+        'M390.5416 230.8807L398.2922 857.1235 770.3176 852.4732 759.4669 216.9298 661.8102 215.3796 590.5053 362.6397 528.5011 368.8401 466.4968 227.7805Z'
+      );
+ 
+      const mangaDerecha = crearParteSvg(
+        namespaceSvg,
+        camiseta.mangaDerColor,
+        'M771.8677 216.9298L778.0681 354.8892 957.8804 423.0938 962.5307 263.4329Z'
+      );
+ 
+      const cuello = crearParteSvg(
+        namespaceSvg,
+        camiseta.cuelloColor,
+        'M433.9446 229.3306L511.4499 404.4926 629.258 395.192 695.9125 213.8296 660.2601 215.3796 587.4051 365.7399 523.8507 367.29 463.3966 227.7805Z'
+      );
+ 
+      svg.appendChild(mangaIzquierda);
+      svg.appendChild(torso);
+      svg.appendChild(mangaDerecha);
+      svg.appendChild(cuello);
+ 
+      return svg;
+    }
+ 
+ 
+    function crearParteSvg(namespaceSvg, color, ruta) {
+      const parte = document.createElementNS(namespaceSvg, 'path');
+ 
+      parte.setAttribute('d', ruta);
+      parte.setAttribute('fill', color || '#ffffff');
+      parte.setAttribute('stroke', '#000000');
+      parte.setAttribute('stroke-width', '3');
+      parte.setAttribute('stroke-linecap', 'round');
+      parte.setAttribute('vector-effect', 'non-scaling-stroke');
+ 
+      return parte;
+    }
+ 
+ 
+    async function votarCamiseta(
+      camisetaId,
+      voto,
+      btnFavor,
+      btnContra
+    ) {
+      try {
+        btnFavor.disabled = true;
+        btnContra.disabled = true;
+ 
+        const respuesta = await fetch(
+          API_CAMISETAS + '/' + camisetaId + '/votar',
+          {
+            method: 'PUT',
+            headers: obtenerHeaders(),
+            body: JSON.stringify({
+              voto: voto
+            })
+          }
+        );
+ 
+        const resultado = await procesarRespuesta(respuesta);
+ 
+        actualizarCalificacion(
+          camisetaId,
+          resultado.calificacion
+        );
+ 
+        const camiseta = camisetas.find(
+          elemento => elemento._id === camisetaId
+        );
+ 
+        if (camiseta) {
+          camiseta.calificacion = resultado.calificacion;
+        }
+ 
+        mostrarMensaje(
+          voto === 1
+            ? 'Voto a favor registrado.'
+            : 'Voto en contra registrado.'
+        );
+ 
+      } catch (error) {
+        console.error(error);
+        mostrarMensaje(error.message, true);
+ 
+      } finally {
+        btnFavor.disabled = false;
+        btnContra.disabled = false;
+      }
+    }
+ 
+ 
+    function actualizarCalificacion(camisetaId, nuevaCalificacion) {
+      const elemento = document.getElementById(
+        'calificacion-' + camisetaId
+      );
+ 
+      if (!elemento) {
+        return;
+      }
+ 
+      elemento.textContent =
+        'Calificación: ' + nuevaCalificacion;
+ 
+      elemento.className =
+        obtenerClaseCalificacion(nuevaCalificacion);
+    }
+ 
+ 
+    function obtenerClaseCalificacion(calificacion) {
+      const valor = Number(calificacion) || 0;
+ 
+      if (valor > 0) {
+        return 'calificacion calificacion-positiva';
+      }
+ 
+      if (valor < 0) {
+        return 'calificacion calificacion-negativa';
+      }
+ 
+      return 'calificacion calificacion-neutral';
+    }
+ 
+ 
+    function obtenerCantidadVisible() {
+      if (window.innerWidth <= 600) {
+        return 1;
+      }
+ 
+      if (window.innerWidth <= 850) {
+        return 2;
+      }
+ 
+      return 3;
+    }
+ 
+ 
+    function mostrarAnterior() {
+      if (posicionActual > 0) {
+        posicionActual--;
+        actualizarCarrusel();
+      }
+    }
+ 
+ 
+    function mostrarSiguiente() {
+      const cantidadVisible = obtenerCantidadVisible();
+      const posicionMaxima = Math.max(
+        camisetas.length - cantidadVisible,
+        0
+      );
+ 
+      if (posicionActual < posicionMaxima) {
+        posicionActual++;
+        actualizarCarrusel();
+      }
+    }
+ 
+ 
+    function actualizarCarrusel() {
+      if (camisetas.length === 0) {
+        return;
+      }
+ 
+      const cantidadVisible = obtenerCantidadVisible();
+      const posicionMaxima = Math.max(
+        camisetas.length - cantidadVisible,
+        0
+      );
+ 
+      if (posicionActual > posicionMaxima) {
+        posicionActual = posicionMaxima;
+      }
+ 
+      const primeraTarjeta = carrusel.querySelector(
+        '.tarjeta-camiseta'
+      );
+ 
+      if (!primeraTarjeta) {
+        return;
+      }
+ 
+      const anchoTarjeta =
+        primeraTarjeta.getBoundingClientRect().width;
+ 
+      const estilosCarrusel = window.getComputedStyle(carrusel);
+      const espacio = parseFloat(estilosCarrusel.gap) || 20;
+ 
+      const desplazamiento =
+        posicionActual * (anchoTarjeta + espacio);
+ 
+      carrusel.style.transform =
+        'translateX(-' + desplazamiento + 'px)';
+ 
+      btnAnterior.disabled = posicionActual === 0;
+ 
+      btnSiguiente.disabled =
+        posicionActual >= posicionMaxima;
+    }
+ 
+ 
+    function mostrarMensaje(texto, esError = false) {
+      mensaje.textContent = texto;
+ 
+      mensaje.className = esError
+        ? 'mensaje-error'
+        : 'mensaje-correcto';
+ 
+      setTimeout(() => {
+        mensaje.textContent = '';
+        mensaje.className = '';
+      }, 2500);
+    }
+  </script>
+ 
+</body>
+ 
+</html>

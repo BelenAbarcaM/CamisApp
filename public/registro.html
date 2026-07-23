@@ -8,27 +8,116 @@
 
  
 
- 
+ <style>
 
-<h2>Escriba su nombre</h2>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
 
-<input id = "nombre" type="text" placeholder="Escriba su nombre">
+body{
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
 
- 
+.registro{
+    width:420px;
+    background:white;
+    padding:40px;
+    border-radius:20px;
+    box-shadow:0 15px 40px rgba(0,0,0,.25);
+}
 
-<h2>Escriba su email</h2>
+.registro h1{
+    text-align:center;
+    color:#333;
+    margin-bottom:30px;
+}
 
-<input id = "email" type="text" placeholder="Escriba su email">
+label{
+    display:block;
+    margin-top:18px;
+    margin-bottom:8px;
+    color:#555;
+    font-weight:bold;
+}
 
-<h2>Escriba la clave</h2>
+input[type=text],
+input[type=password]{
+    width:100%;
+    padding:14px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    outline:none;
+    transition:.3s;
+    font-size:16px;
+}
 
-<input id = "clave" type="password" placeholder="Escriba su clave">
+input:focus{
+    border-color:#667eea;
+    box-shadow:0 0 10px rgba(102,126,234,.35);
+}
 
- 
+#btn-guardar{
+    width:100%;
+    margin-top:25px;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:#667eea;
+    color:white;
+    font-size:18px;
+    cursor:pointer;
+    transition:.3s;
+}
 
-<input type="button" value="Registrarse" id = "btn-guardar">
+#btn-guardar:hover{
+    background:#4b5fd3;
+    transform:translateY(-2px);
+}
 
- 
+a{
+    display:block;
+    margin-top:20px;
+    text-align:center;
+    text-decoration:none;
+    color:#667eea;
+    font-weight:bold;
+}
+
+a:hover{
+    text-decoration:underline;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="registro">
+
+<h1>Crear cuenta</h1>
+
+<label>Nombre</label>
+<input id="nombre" type="text" placeholder="Escriba su nombre">
+
+<label>Email</label>
+<input id="email" type="text" placeholder="Escriba su email">
+
+<label>Contraseña</label>
+<input id="clave" type="password" placeholder="Escriba su clave">
+
+<input type="button" value="Registrarse" id="btn-guardar">
+
+<a href="login.html">Ya tengo una cuenta</a>
+
+</div>
 
 <script>
 
@@ -71,6 +160,8 @@ btnGuardar.addEventListener('click', async () => {
   const data = await resp.json();
 
   console.log('Usuario guardado en servidor:', data);
+
+  alert('Usuario registrado correctamente. Ahora puede iniciar sesión.');
 
 });
 

@@ -1,83 +1,720 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
+<html>
+<head></head>
 <body>
-    <div class="camiseta-container">
-<svg id="camiseta-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="500" height="500" viewBox="0 0 599 404">
-<desc>Created with SVGMaker Editor 3.0.0</desc>
-<defs>
-</defs>
-<path id="manga-derecha" class="parte-camiseta" transform="translate(0,0)" style="stroke: rgb(0,0,0)"; stroke-width: 2; vector-effect="non-scaling-stroke" stroke-linecap="round" d="M381.3806 101.8247L382.6917 157.5339 438.631 185.3885 460.9194 138.9641Z"/>
-<path id="manga-izquierda" class="parte-camiseta" transform="translate(0,0)" style="stroke: rgb(0,0,0)"; stroke-width: 2; vector-effect="non-scaling-stroke" stroke-linecap="round" d="M205.4649 98.2547L204.1872 161.7314 149.6739 193.4697 127.9538 140.5725Z"/>
-<path id="torso" class="parte-camiseta" transform="translate(0,0)" style="stroke: rgb(0,0,0)"; stroke-width: 2; vector-effect="non-scaling-stroke" stroke-linecap="round" d="M209.2333 99.1304L208.7106 195.4556 191.9847 346.3425 387.4692 346.3425 378.5835 194.782 377.0155 101.1512 327.3603 99.804 315.8612 141.5674 267.7741 139.5466 262.0246 98.4568Z"/>
-<path id="cuello" class="parte-camiseta" transform="translate(0,0)" style="stroke: rgb(0,0,0)"; stroke-width: 2; vector-effect="non-scaling-stroke" stroke-linecap="round" d="M270.1697 93.068L275.5617 133.4841 309.2621 135.505 320.0462 95.0888 294.4339 120.0121Z"/>
-</svg>
-    </div>
-    <!-- Selector de color y botones -->
-<div>
-  <input type="color" id="color-picker" value="#ffffff" />
-  <button id="btn-guardar">Guardar Diseño</button>
-  <button id="btn-limpiar">Reiniciar Colores</button>
-</div>
-<script>
-    // Referencias a elementos del DOM
-const svg = document.getElementById('camiseta-svg');
-const colorPicker = document.getElementById('color-picker');
-const btnGuardar = document.getElementById('btn-guardar');
-const btnLimpiar = document.getElementById('btn-limpiar');
-
-let parteSeleccionada = null; // elemento SVG actualmente seleccionado por el usuario
-
-// Event listener para seleccionar parte de la camiseta al hacer click
-svg.addEventListener('click', (event) => {
-  if (event.target.classList.contains('parte-camiseta')) {
-    parteSeleccionada = event.target;  // establece la parte clickeada como seleccionada
-    // Opcional: resaltar de alguna forma la parte seleccionada, o mostrar su nombre
-    console.log('Parte seleccionada:', parteSeleccionada.id);
-    // Actualizar el colorPicker al color actual de la parte
-    const colorActual = parteSeleccionada.getAttribute('fill');
-    colorPicker.value = colorActual;
-  }
-});
-
-// Event listener para cambiar color de la parte seleccionada
-colorPicker.addEventListener('input', (event) => {
-  if (parteSeleccionada) {
-    parteSeleccionada.setAttribute('fill', event.target.value);
-  }
-});
-
-// Botón para reiniciar todos los colores a blanco
-btnLimpiar.addEventListener('click', () => {
-  document.querySelectorAll('.parte-camiseta').forEach(el => {
-    el.setAttribute('fill', '#ffffff');
-  });
-});
-btnGuardar.addEventListener('click', async () => {
-  // Obtener colores actuales de cada parte
-  const diseño = {
-    torsoColor: document.getElementById('torso').getAttribute('fill'),
-    mangaIzqColor: document.getElementById('manga-izquierda').getAttribute('fill'),
-    mangaDerColor: document.getElementById('manga-derecha').getAttribute('fill'),
-    cuelloColor: document.getElementById('cuello').getAttribute('fill')
-  };
-  
-  // Enviar via fetch al servidor
-  const resp = await fetch('/api/camisetas', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(diseño)
-  });
-  const data = await resp.json();
-  console.log('Diseño guardado en servidor:', data);
-});
-
-</script>
+ 
+<!DOCTYPE html>
+<html lang="es">
+ 
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ 
+  <title>Diseñador de camisetas</title>
+ 
+  <style>
+    body {
+      margin: 0;
+      padding: 25px;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+    }
+ 
+    h1,
+    h2 {
+      text-align: center;
+    }
+ 
+    .contenedor-principal {
+      max-width: 1100px;
+      margin: auto;
+    }
+ 
+    .panel {
+      padding: 20px;
+      margin-bottom: 25px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+ 
+    .camiseta-container {
+      display: flex;
+      justify-content: center;
+      overflow: hidden;
+    }
+ 
+    #camiseta-svg {
+      width: 450px;
+      height: 450px;
+    }
+ 
+    .parte-camiseta {
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+ 
+    .parte-camiseta:hover {
+      opacity: 0.8;
+    }
+ 
+    .parte-seleccionada {
+      stroke: #2196f3 !important;
+      stroke-width: 8px !important;
+    }
+ 
+    .controles {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-top: 15px;
+    }
+ 
+    input[type="color"] {
+      width: 60px;
+      height: 40px;
+      border: none;
+      cursor: pointer;
+    }
+ 
+    button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+ 
+    #btn-guardar {
+      color: white;
+      background-color: #198754;
+    }
+ 
+    #btn-limpiar {
+      background-color: #ffc107;
+    }
+ 
+    #btn-cancelar {
+      color: white;
+      background-color: #6c757d;
+    }
+ 
+    .btn-editar {
+      color: white;
+      background-color: #0d6efd;
+    }
+ 
+    .btn-eliminar {
+      color: white;
+      background-color: #dc3545;
+    }
+ 
+    .oculto {
+      display: none;
+    }
+ 
+    #mensaje {
+      min-height: 24px;
+      margin-top: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+ 
+    .mensaje-correcto {
+      color: #198754;
+    }
+ 
+    .mensaje-error {
+      color: #dc3545;
+    }
+ 
+    .tabla-contenedor {
+      overflow-x: auto;
+    }
+ 
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+ 
+    th,
+    td {
+      padding: 10px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+ 
+    th {
+      color: white;
+      background-color: #333;
+    }
+ 
+    .muestra-color {
+      display: inline-block;
+      width: 35px;
+      height: 35px;
+      border: 1px solid #333;
+      border-radius: 5px;
+    }
+ 
+    .acciones {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+    }
+ 
+    #sin-camisetas {
+      padding: 20px;
+      color: #666;
+      text-align: center;
+    }
+  </style>
+</head>
+ 
+<body>
+ 
+  <main class="contenedor-principal">
+ 
+    <section class="panel">
+ 
+      <h1>Diseña tu camiseta</h1>
+ 
+      <p id="modo-edicion" class="oculto">
+        Está editando una camiseta guardada.
+      </p>
+ 
+      <div class="camiseta-container">
+ 
+        <svg
+          id="camiseta-svg"
+          xmlns="http://www.w3.org/2000/svg"
+          version="1.1"
+          viewBox="0 0 1100 1024">
+ 
+          <path
+            id="mangaizquierda"
+            class="parte-camiseta"
+            fill="#ffffff"
+            style="stroke: rgb(0,0,0); stroke-width: 2"
+            vector-effect="non-scaling-stroke"
+            stroke-linecap="round"
+            d="M179.7272 288.2346L189.0279 457.1962 370.3902 384.3412 368.8401 232.4308Z">
+          </path>
+ 
+          <path
+            id="torso"
+            class="parte-camiseta"
+            fill="#ffffff"
+            style="stroke: rgb(0,0,0); stroke-width: 2"
+            vector-effect="non-scaling-stroke"
+            stroke-linecap="round"
+            d="M390.5416 230.8807L398.2922 857.1235 770.3176 852.4732 759.4669 216.9298 661.8102 215.3796 590.5053 362.6397 528.5011 368.8401 466.4968 227.7805Z">
+          </path>
+ 
+          <path
+            id="mangaderecha"
+            class="parte-camiseta"
+            fill="#ffffff"
+            style="stroke: rgb(0,0,0); stroke-width: 2"
+            vector-effect="non-scaling-stroke"
+            stroke-linecap="round"
+            d="M771.8677 216.9298L778.0681 354.8892 957.8804 423.0938 962.5307 263.4329Z">
+          </path>
+ 
+          <path
+            id="cuello"
+            class="parte-camiseta"
+            fill="#ffffff"
+            style="stroke: rgb(0,0,0); stroke-width: 2"
+            vector-effect="non-scaling-stroke"
+            stroke-linecap="round"
+            d="M433.9446 229.3306L511.4499 404.4926 629.258 395.192 695.9125 213.8296 660.2601 215.3796 587.4051 365.7399 523.8507 367.29 463.3966 227.7805Z">
+          </path>
+ 
+        </svg>
+ 
+      </div>
+ 
+      <div class="controles">
+ 
+        <label for="color-picker">Seleccione un color:</label>
+ 
+        <input
+          type="color"
+          id="color-picker"
+          value="#ffffff">
+ 
+        <button type="button" id="btn-guardar">
+          Guardar diseño
+        </button>
+ 
+        <button type="button" id="btn-limpiar">
+          Reiniciar colores
+        </button>
+ 
+        <button type="button" id="btn-cancelar" class="oculto">
+          Cancelar edición
+        </button>
+ 
+      </div>
+ 
+      <div id="mensaje"></div>
+ 
+    </section>
+ 
+    <section class="panel">
+ 
+      <h2>Mis camisetas guardadas</h2>
+ 
+      <div class="tabla-contenedor">
+ 
+        <table id="tabla-camisetas">
+ 
+          <thead>
+            <tr>
+              <th>Torso</th>
+              <th>Manga izquierda</th>
+              <th>Manga derecha</th>
+              <th>Cuello</th>
+              <th>Fecha</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+ 
+          <tbody id="lista-camisetas"></tbody>
+ 
+        </table>
+ 
+        <p id="sin-camisetas" class="oculto">
+          No tiene camisetas guardadas.
+        </p>
+ 
+      </div>
+ 
+    </section>
+ 
+  </main>
+ 
+  <script>
+    const API_CAMISETAS = '/api/camisetas';
+ 
+    const svg = document.getElementById('camiseta-svg');
+    const colorPicker = document.getElementById('color-picker');
+    const btnGuardar = document.getElementById('btn-guardar');
+    const btnLimpiar = document.getElementById('btn-limpiar');
+    const btnCancelar = document.getElementById('btn-cancelar');
+    const listaCamisetas = document.getElementById('lista-camisetas');
+    const tablaCamisetas = document.getElementById('tabla-camisetas');
+    const sinCamisetas = document.getElementById('sin-camisetas');
+    const mensaje = document.getElementById('mensaje');
+    const modoEdicion = document.getElementById('modo-edicion');
+ 
+    let parteSeleccionada = null;
+    let camisetaEditandoId = null;
+ 
+ 
+    document.addEventListener('DOMContentLoaded', iniciarPagina);
+ 
+ 
+    async function iniciarPagina() {
+      const sesionValida = await verificarSesion();
+ 
+      if (!sesionValida) {
+        return;
+      }
+ 
+      configurarEventos();
+      await cargarCamisetas();
+    }
+ 
+ 
+    function obtenerToken() {
+      return localStorage.getItem('token');
+    }
+ 
+ 
+    function obtenerHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + obtenerToken()
+      };
+    }
+ 
+ 
+    async function verificarSesion() {
+      const token = obtenerToken();
+ 
+      if (!token) {
+        regresarAlLogin();
+        return false;
+      }
+ 
+      try {
+        const respuesta = await fetch('/api/verificatoken', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        });
+ 
+        if (!respuesta.ok) {
+          regresarAlLogin();
+          return false;
+        }
+ 
+        return true;
+ 
+      } catch (error) {
+        console.error('Error verificando la sesión:', error);
+        regresarAlLogin();
+        return false;
+      }
+    }
+ 
+ 
+    function regresarAlLogin() {
+      localStorage.removeItem('token');
+      window.location.replace('login.html');
+    }
+ 
+ 
+    async function procesarRespuesta(respuesta) {
+      if (respuesta.status === 401 || respuesta.status === 403) {
+        regresarAlLogin();
+        throw new Error('La sesión expiró');
+      }
+ 
+      let datos = {};
+ 
+      try {
+        datos = await respuesta.json();
+      } catch (error) {
+        datos = {};
+      }
+ 
+      if (!respuesta.ok) {
+        throw new Error(
+          datos.error || 'No fue posible completar la operación'
+        );
+      }
+ 
+      return datos;
+    }
+ 
+ 
+    function configurarEventos() {
+      svg.addEventListener('click', seleccionarParte);
+      colorPicker.addEventListener('input', cambiarColor);
+      btnGuardar.addEventListener('click', guardarCamiseta);
+      btnLimpiar.addEventListener('click', reiniciarFormulario);
+      btnCancelar.addEventListener('click', reiniciarFormulario);
+    }
+ 
+ 
+    function seleccionarParte(evento) {
+      if (!evento.target.classList.contains('parte-camiseta')) {
+        return;
+      }
+ 
+      document
+        .querySelectorAll('.parte-camiseta')
+        .forEach(parte => {
+          parte.classList.remove('parte-seleccionada');
+        });
+ 
+      parteSeleccionada = evento.target;
+      parteSeleccionada.classList.add('parte-seleccionada');
+ 
+      colorPicker.value =
+        parteSeleccionada.getAttribute('fill') || '#ffffff';
+    }
+ 
+ 
+    function cambiarColor(evento) {
+      if (!parteSeleccionada) {
+        mostrarMensaje(
+          'Primero seleccione una parte de la camiseta.',
+          true
+        );
+ 
+        return;
+      }
+ 
+      parteSeleccionada.setAttribute('fill', evento.target.value);
+      limpiarMensaje();
+    }
+ 
+ 
+    function obtenerDiseñoActual() {
+      return {
+        torsoColor:
+          document.getElementById('torso').getAttribute('fill'),
+ 
+        mangaIzqColor:
+          document.getElementById('mangaizquierda').getAttribute('fill'),
+ 
+        mangaDerColor:
+          document.getElementById('mangaderecha').getAttribute('fill'),
+ 
+        cuelloColor:
+          document.getElementById('cuello').getAttribute('fill')
+      };
+    }
+ 
+ 
+    async function guardarCamiseta() {
+      try {
+        btnGuardar.disabled = true;
+ 
+        const diseño = obtenerDiseñoActual();
+ 
+        let url = API_CAMISETAS;
+        let metodo = 'POST';
+ 
+        if (camisetaEditandoId) {
+          url = API_CAMISETAS + '/' + camisetaEditandoId;
+          metodo = 'PUT';
+        }
+ 
+        const respuesta = await fetch(url, {
+          method: metodo,
+          headers: obtenerHeaders(),
+          body: JSON.stringify(diseño)
+        });
+ 
+        await procesarRespuesta(respuesta);
+ 
+        mostrarMensaje(
+          camisetaEditandoId
+            ? 'Camiseta actualizada correctamente.'
+            : 'Camiseta guardada correctamente.'
+        );
+ 
+        reiniciarFormulario(false);
+        await cargarCamisetas();
+ 
+      } catch (error) {
+        console.error(error);
+        mostrarMensaje(error.message, true);
+ 
+      } finally {
+        btnGuardar.disabled = false;
+      }
+    }
+ 
+ 
+    async function cargarCamisetas() {
+      try {
+        const respuesta = await fetch(API_CAMISETAS, {
+          method: 'GET',
+          headers: obtenerHeaders()
+        });
+ 
+        const camisetas = await procesarRespuesta(respuesta);
+ 
+        mostrarCamisetas(camisetas);
+ 
+      } catch (error) {
+        console.error(error);
+        mostrarMensaje(error.message, true);
+      }
+    }
+ 
+ 
+    function mostrarCamisetas(camisetas) {
+      listaCamisetas.replaceChildren();
+ 
+      if (camisetas.length === 0) {
+        tablaCamisetas.classList.add('oculto');
+        sinCamisetas.classList.remove('oculto');
+        return;
+      }
+ 
+      tablaCamisetas.classList.remove('oculto');
+      sinCamisetas.classList.add('oculto');
+ 
+      camisetas.forEach(camiseta => {
+        const fila = document.createElement('tr');
+ 
+        fila.appendChild(
+          crearCeldaColor(camiseta.torsoColor)
+        );
+ 
+        fila.appendChild(
+          crearCeldaColor(camiseta.mangaIzqColor)
+        );
+ 
+        fila.appendChild(
+          crearCeldaColor(camiseta.mangaDerColor)
+        );
+ 
+        fila.appendChild(
+          crearCeldaColor(camiseta.cuelloColor)
+        );
+ 
+        const celdaFecha = document.createElement('td');
+ 
+        celdaFecha.textContent = camiseta.fechaCreacion
+          ? new Date(camiseta.fechaCreacion).toLocaleString('es-CR')
+          : 'Sin fecha';
+ 
+        fila.appendChild(celdaFecha);
+ 
+        const celdaAcciones = document.createElement('td');
+        const contenedorAcciones = document.createElement('div');
+ 
+        contenedorAcciones.className = 'acciones';
+ 
+        const btnEditar = document.createElement('button');
+        btnEditar.type = 'button';
+        btnEditar.className = 'btn-editar';
+        btnEditar.textContent = 'Editar';
+ 
+        btnEditar.addEventListener('click', () => {
+          editarCamiseta(camiseta);
+        });
+ 
+        const btnEliminar = document.createElement('button');
+        btnEliminar.type = 'button';
+        btnEliminar.className = 'btn-eliminar';
+        btnEliminar.textContent = 'Eliminar';
+ 
+        btnEliminar.addEventListener('click', () => {
+          eliminarCamiseta(camiseta._id);
+        });
+ 
+        contenedorAcciones.appendChild(btnEditar);
+        contenedorAcciones.appendChild(btnEliminar);
+        celdaAcciones.appendChild(contenedorAcciones);
+        fila.appendChild(celdaAcciones);
+ 
+        listaCamisetas.appendChild(fila);
+      });
+    }
+ 
+ 
+    function crearCeldaColor(color) {
+      const celda = document.createElement('td');
+      const muestra = document.createElement('span');
+ 
+      muestra.className = 'muestra-color';
+      muestra.style.backgroundColor = color || '#ffffff';
+      muestra.title = color || '#ffffff';
+ 
+      celda.appendChild(muestra);
+ 
+      return celda;
+    }
+ 
+ 
+    function editarCamiseta(camiseta) {
+      camisetaEditandoId = camiseta._id;
+ 
+      document
+        .getElementById('torso')
+        .setAttribute('fill', camiseta.torsoColor || '#ffffff');
+ 
+      document
+        .getElementById('mangaizquierda')
+        .setAttribute('fill', camiseta.mangaIzqColor || '#ffffff');
+ 
+      document
+        .getElementById('mangaderecha')
+        .setAttribute('fill', camiseta.mangaDerColor || '#ffffff');
+ 
+      document
+        .getElementById('cuello')
+        .setAttribute('fill', camiseta.cuelloColor || '#ffffff');
+ 
+      btnGuardar.textContent = 'Actualizar camiseta';
+      btnCancelar.classList.remove('oculto');
+      modoEdicion.classList.remove('oculto');
+ 
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+ 
+      mostrarMensaje('Puede modificar los colores de la camiseta.');
+    }
+ 
+ 
+    async function eliminarCamiseta(id) {
+      const confirmar = window.confirm(
+        '¿Está seguro de que desea eliminar esta camiseta?'
+      );
+ 
+      if (!confirmar) {
+        return;
+      }
+ 
+      try {
+        const respuesta = await fetch(
+          API_CAMISETAS + '/' + id,
+          {
+            method: 'DELETE',
+            headers: obtenerHeaders()
+          }
+        );
+ 
+        const resultado = await procesarRespuesta(respuesta);
+ 
+        if (camisetaEditandoId === id) {
+          reiniciarFormulario(false);
+        }
+ 
+        mostrarMensaje(
+          resultado.mensaje || 'Camiseta eliminada correctamente.'
+        );
+ 
+        await cargarCamisetas();
+ 
+      } catch (error) {
+        console.error(error);
+        mostrarMensaje(error.message, true);
+      }
+    }
+ 
+ 
+    function reiniciarFormulario(limpiarMensajeActual = true) {
+      document
+        .querySelectorAll('.parte-camiseta')
+        .forEach(parte => {
+          parte.setAttribute('fill', '#ffffff');
+          parte.classList.remove('parte-seleccionada');
+        });
+ 
+      camisetaEditandoId = null;
+      parteSeleccionada = null;
+ 
+      colorPicker.value = '#ffffff';
+      btnGuardar.textContent = 'Guardar diseño';
+ 
+      btnCancelar.classList.add('oculto');
+      modoEdicion.classList.add('oculto');
+ 
+      if (limpiarMensajeActual) {
+        limpiarMensaje();
+      }
+    }
+ 
+ 
+    function mostrarMensaje(texto, esError = false) {
+      mensaje.textContent = texto;
+ 
+      mensaje.className = esError
+        ? 'mensaje-error'
+        : 'mensaje-correcto';
+    }
+ 
+ 
+    function limpiarMensaje() {
+      mensaje.textContent = '';
+      mensaje.className = '';
+    }
+  </script>
+ 
 </body>
+ 
 </html>
